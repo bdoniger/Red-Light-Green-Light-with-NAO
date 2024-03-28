@@ -15,3 +15,19 @@
 4. Fetch and merge into main (when section finished)
 5. Resolve any merge issues
 6. Create a pull request to merge into main
+
+## 2. Environment
+
+1. **NAO development requirement**
+
+   1. python = 2.7
+   2. naoqi python SDK
+   3. multiprocessing package
+2. **Detection requirement**
+
+   1. python >= 3.8
+   2. conda env
+   3. pytorch
+   4. ```bash
+      pip install -r requirement.txt
+      ```
