@@ -31,3 +31,7 @@
    4. ```bash
       pip install -r requirement.txt
       ```
+## 3. Dectection
+1. **Modules**
+   1. Opencv `cv2`
+   2. yolov8 `Yolo` 
