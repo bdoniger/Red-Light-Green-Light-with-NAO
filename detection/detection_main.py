@@ -77,6 +77,9 @@ if __name__ == '__main__':
         except Exception as e:
             print(e)
             os.system('sleep 1')
+            if e == "keyboard interrupt":
+                conn.close()
+                exit()
             continue
     print('[INFO]connected to server...')
     # ping & pong
@@ -99,10 +102,11 @@ if __name__ == '__main__':
     
     
     last_body_angle = body_angle_dict
-    camera = Camera_Thread(cv2.VideoCapture(0), video=False, video_path=0)
+    # camera = Camera_Thread(cv2.VideoCapture(), video=False, video_path=0)
+    camera = cv2.VideoCapture(0)
     nao_signal = ""
     signal_trigger = utils.Trigger()
-    while camera.is_open():
+    while camera.isOpened():
         
         if conn.poll(0):
             msg = conn.recv()
@@ -157,19 +161,22 @@ if __name__ == '__main__':
                 thickness=10,
             )
             
-            if nao_signal == "stop":
-                signal_trigger.rise()
-            else:
-                signal_trigger.fall()
-            
-            if signal_trigger.is_rising_edge():
-                last_body_angle = body_angle_history[1][-1].copy()
-                print(last_body_angle)
-            if signal_trigger.is_triggered():
-                if not utils.check_angle_error_within_threshold(last_body_angle,body_angle_history[1][-1],10):
-                    logger.info("movement detected")
-                    conn.send(("detect",True))
-            
+        if nao_signal == "stop":
+            signal_trigger.rise()
+        else:
+            signal_trigger.fall()
+        
+        if signal_trigger.is_rising_edge():
+            last_body_angle = body_angle_history[1][-1].copy()
+            print(last_body_angle)
+        if signal_trigger.is_triggered():
+            if not utils.check_angle_error_within_threshold(last_body_angle,body_angle_history[1][-1],10):
+                logger.info("movement detected")
+                conn.send(("detect",True))
+                    
+        cv2.imshow("YOLOv8 Pose", annotated_frame)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break    
             
             
     
