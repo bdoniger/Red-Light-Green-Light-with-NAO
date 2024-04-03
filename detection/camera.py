@@ -30,7 +30,8 @@ class Camera_Thread(object):
         # if camera not open, try to open it
         if not self._video:
             if not self._open:
-                self._open, self.cap = self._capture_method()
+                self._open= self._capture_method(self._video_path).isopened()
+                self._cap = self._capture_method(self._video_path)
                 if not self._is_init and self._open:
                     self._is_init = True
         else:
