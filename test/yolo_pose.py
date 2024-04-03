@@ -60,27 +60,20 @@ def calculate_angle(p1, p2, p3):
 
 
 def calculate_body_angle(skeleton):
-    l_ear_shoulder_angle = calculate_angle(skeleton[pose_dict['LEFT_EAR']],skeleton[pose_dict['LEFT_SHOULDER']],skeleton[pose_dict['RIGHT_SHOULDER']])
-    r_ear_shoulder_angle = calculate_angle(skeleton[pose_dict['RIGHT_EAR']],skeleton[pose_dict['RIGHT_SHOULDER']],skeleton[pose_dict['LEFT_SHOULDER']])
-    l_shoulder_angle = calculate_angle(skeleton[pose_dict['LEFT_ELBOW']],skeleton[pose_dict["LEFT_SHOULDER"]],skeleton[pose_dict['LEFT_HIP']])
-    r_shoulder_angle = calculate_angle(skeleton[pose_dict['RIGHT_ELBOW']],skeleton[pose_dict["RIGHT_SHOULDER"]],skeleton[pose_dict['RIGHT_HIP']])
-    l_elbow_angle = calculate_angle(skeleton[pose_dict['LEFT_SHOULDER']],skeleton[pose_dict['LEFT_ELBOW']],skeleton[pose_dict['LEFT_WRIST']])
-    r_elbow_angle = calculate_angle(skeleton[pose_dict['RIGHT_SHOULDER']],skeleton[pose_dict['RIGHT_ELBOW']],skeleton[pose_dict['RIGHT_WRIST']])
-    l_hip_angle = calculate_angle(skeleton[pose_dict['RIGHT_HIP']],skeleton[pose_dict['LEFT_HIP']],skeleton[pose_dict['LEFT_KNEE']])
-    r_hip_angle = calculate_angle(skeleton[pose_dict['LEFT_HIP']],skeleton[pose_dict['RIGHT_HIP']],skeleton[pose_dict['RIGHT_KNEE']])
-    l_knee_angle = calculate_angle(skeleton[pose_dict['LEFT_HIP']],skeleton[pose_dict['LEFT_KNEE']],skeleton[pose_dict['LEFT_ANKLE']])
-    r_knee_angle = calculate_angle(skeleton[pose_dict['RIGHT_HIP']],skeleton[pose_dict['RIGHT_KNEE']],skeleton[pose_dict['RIGHT_ANKLE']])
-    body_angle_dict['l_ear_shoulder_angle'] = l_ear_shoulder_angle
-    body_angle_dict['r_ear_shoulder_angle'] = r_ear_shoulder_angle
-    body_angle_dict['l_shoulder_angle'] = l_shoulder_angle
-    body_angle_dict['r_shoulder_angle'] = r_shoulder_angle
-    body_angle_dict['l_elbow_angle'] = l_elbow_angle
-    body_angle_dict['r_elbow_angle'] = r_elbow_angle
-    body_angle_dict['l_hip_angle'] = l_hip_angle
-    body_angle_dict['r_hip_angle'] = r_hip_angle
-    body_angle_dict['l_knee_angle'] = l_knee_angle
-    body_angle_dict['r_knee_angle'] = r_knee_angle
+    body_angle_dict['l_ear_shoulder_angle']  = calculate_angle(skeleton[pose_dict['LEFT_EAR']],skeleton[pose_dict['LEFT_SHOULDER']],skeleton[pose_dict['RIGHT_SHOULDER']])
+    body_angle_dict['r_ear_shoulder_angle'] = calculate_angle(skeleton[pose_dict['RIGHT_EAR']],skeleton[pose_dict['RIGHT_SHOULDER']],skeleton[pose_dict['LEFT_SHOULDER']])
+    body_angle_dict['l_shoulder_angle'] = calculate_angle(skeleton[pose_dict['LEFT_ELBOW']],skeleton[pose_dict["LEFT_SHOULDER"]],skeleton[pose_dict['LEFT_HIP']])
+    body_angle_dict['r_shoulder_angle'] = calculate_angle(skeleton[pose_dict['RIGHT_ELBOW']],skeleton[pose_dict["RIGHT_SHOULDER"]],skeleton[pose_dict['RIGHT_HIP']])
+    body_angle_dict['l_elbow_angle'] = calculate_angle(skeleton[pose_dict['LEFT_SHOULDER']],skeleton[pose_dict['LEFT_ELBOW']],skeleton[pose_dict['LEFT_WRIST']])
+    body_angle_dict['r_elbow_angle'] = calculate_angle(skeleton[pose_dict['RIGHT_SHOULDER']],skeleton[pose_dict['RIGHT_ELBOW']],skeleton[pose_dict['RIGHT_WRIST']])
+    body_angle_dict['l_hip_angle'] = calculate_angle(skeleton[pose_dict['RIGHT_HIP']],skeleton[pose_dict['LEFT_HIP']],skeleton[pose_dict['LEFT_KNEE']])
+    body_angle_dict['r_hip_angle'] = calculate_angle(skeleton[pose_dict['LEFT_HIP']],skeleton[pose_dict['RIGHT_HIP']],skeleton[pose_dict['RIGHT_KNEE']])
+    body_angle_dict['l_knee_angle'] = calculate_angle(skeleton[pose_dict['LEFT_HIP']],skeleton[pose_dict['LEFT_KNEE']],skeleton[pose_dict['LEFT_ANKLE']])
+    body_angle_dict['r_knee_angle'] = calculate_angle(skeleton[pose_dict['RIGHT_HIP']],skeleton[pose_dict['RIGHT_KNEE']],skeleton[pose_dict['RIGHT_ANKLE']])
     return body_angle_dict
+
+def calculate_body_angle_mean(body_angle_history):
+    pass
 
 def check_angle_error_within_threshold(last_body_angle, current_body_angle, threshold):
     for key in last_body_angle.keys():
@@ -162,7 +155,10 @@ while cap.isOpened():
     #check if c is pressed
         if cv2.waitKey(1) & 0xFF == ord("c"):
             print("c pressed")
-            last_body_angle = body_angle_history[1][-1].copy()  # copy by value
+            #average of last 5 frames
+            
+            # last_body_angle = np.mean(body_angle_history[1][-5:],axis=0)
+            last_body_angle = body_angle_history[1][-1].copy()
             print(last_body_angle)
             c_press = True
         if c_press and (not check_angle_error_within_threshold(last_body_angle,body_angle_history[1][-1],10)):
