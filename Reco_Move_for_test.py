@@ -1,9 +1,9 @@
 '''
-Reco DONE
-Move DONE
-DETECT DONE
-
+RECO, MOVE, DETECTION DONE
+KEEP MOVING UNDER GREEN UNTIL RED
+KEEP STATIC UNDER RED UNTIL GREEN
 '''
+
 
 from naoqi import ALProxy
 import time
@@ -11,77 +11,80 @@ import time
 nao_ip = "192.168.1.35"
 nao_port = 9559
 
+# Initialize proxies
 motion = ALProxy("ALMotion", nao_ip, nao_port)
+posture = ALProxy("ALRobotPosture", nao_ip, nao_port)
+memory = ALProxy("ALMemory", nao_ip, nao_port)
+sonar = ALProxy("ALSonar", nao_ip, nao_port)
+speechRecognition = ALProxy("ALSpeechRecognition", nao_ip, nao_port)
+
+# Set up robot
 motion.wakeUp()
-
-posture = ALProxy('ALRobotPosture', nao_ip, nao_port)
 posture.goToPosture("Stand", 1.0)
-
 motion.moveInit()
 motion.stiffnessInterpolation("Body", 1.0, 1.0)
-
-# touch sensors
-memory = ALProxy("ALMemory", nao_ip, nao_port)
-
-# sonar for touch detection
-sonar = ALProxy("ALSonar", nao_ip, nao_port)
 sonar.subscribe("SonarApp")
 
-speechRecognition = ALProxy("ALSpeechRecognition", nao_ip, nao_port)
+# Set up speech recognition
 speechRecognition.pause(True)
 speechRecognition.setLanguage("English")
 speechRecognition.setVocabulary(["green", "red"], False)
 
-for i in range(5):
-    print("Listening", i)
+is_moving = False
+
+while True:
+    print("Listening for 'green' or 'red'")
     speechRecognition.subscribe("ASR")
-    
     speechRecognition.pause(False)
-    time.sleep(8)
+    time.sleep(5)
     speechRecognition.pause(True)
-    
     words = memory.getData("WordRecognized")
-    print("Word: ", words)
+    speechRecognition.unsubscribe("ASR")
 
-    if "green" in words:
-        print('Moving forward')
-        motion.moveInit()
-        while True:
-            # Check dis
-            distance = memory.getData("Device/SubDeviceList/US/Right/Sensor/Value")
-            # Check if touch
-            headTouched = memory.getData("Device/SubDeviceList/Head/Touch/Middle/Sensor/Value")
-            
-            if distance < 0.1 or headTouched:  # assuming 0.5 meters as threshold
-                print("Obstacle detected, stopping")
-                motion.stopMove()
-                break
-            
-            # motion.post.moveTo(0.2, 0.0, 0.0)  # Adjust speed as needed
+    print("Heard:", words)
 
-            motion.post.moveTo(0.002, 0.0, 0.0)
-            time.sleep(2)
-
-            motion.post.moveTo(0.002, 0.0, 0.0)
-            time.sleep(2)
-
-            motion.post.moveTo(0.002, 0.0, 0.0)
-            time.sleep(2)
-
-            motion.post.moveTo(0.002, 0.0, 0.0)
-
-    elif "red" in words:
+    if "red" in words and is_moving:
         print('Stopping')
         motion.stopMove()
+        is_moving = False
 
-    speechRecognition.unsubscribe("ASR")
+    elif "green" in words and not is_moving:
+        print('Starting to move')
+        is_moving = True
+
+        while is_moving:
+            distance = memory.getData("Device/SubDeviceList/US/Right/Sensor/Value")
+            headTouched = memory.getData("Device/SubDeviceList/Head/Touch/Middle/Sensor/Value")
+
+            if distance < 0.1 or headTouched:
+                print("Obstacle detected, stopping")
+                motion.stopMove()
+                is_moving = False
+                break
+
+            motion.post.moveTo(0.002, 0.0, 0.0)
+            time.sleep(1)
+
+            # =====================================
+            memory = ALProxy("ALMemory", nao_ip, nao_port)
+            print("Listening for 'green' or 'red' during movement")
+            speechRecognition.subscribe("ASR")
+            speechRecognition.pause(False)
+            time.sleep(2)
+            speechRecognition.pause(True)
+            
+            words = memory.getData("WordRecognized")
+            speechRecognition.unsubscribe("ASR")
+
+            print(" during movement Heard:", words)
+
+            if "red" in words and is_moving:
+                print('Stopping')
+                motion.stopMove()
+                is_moving = False
+            # =====================================
+
 
 # Clean up
 sonar.unsubscribe("SonarApp")
 motion.stiffnessInterpolation("Body", 0, 1.0)
- 
-        motion.stopMove()  
-        motion.post.moveTo(0.0, 0.0, 0.0)
-
-        # lower speed
-        # init motion before loop
