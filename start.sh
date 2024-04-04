@@ -14,7 +14,6 @@ exec zsh"
 # launch the control panel
 #konsole --new-tab -e zsh -c "\
 gnome-terminal --tab --title="python3-YOLO" -x zsh -c "\
-sleep 2; \
 source /home/cooper/anaconda3/bin/activate HRI_project_yolo;\
 cd /home/cooper/Desktop/HRI_project/nao_project/detection; \
 python detection_main.py; 
