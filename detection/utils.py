@@ -36,7 +36,7 @@ def check_angle_error_within_threshold(last_body_angle, current_body_angle, thre
         if last_body_angle[key] == -1 or current_body_angle[key] == -1:
             continue
         
-        print(last_body_angle[key])
+        # print(last_body_angle[key])
         if abs(last_body_angle[key]-current_body_angle[key]) > threshold:
             print(f"Error in {key} angle")
             print(f"Last angle: {last_body_angle[key]}")
