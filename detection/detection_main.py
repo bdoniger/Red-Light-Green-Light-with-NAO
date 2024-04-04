@@ -161,14 +161,16 @@ if __name__ == '__main__':
                 thickness=10,
             )
             
-        if nao_signal == "stop":
+        if nao_signal == "red light":
+            logger.info('red light received')
             signal_trigger.rise()
-        else:
+        elif nao_signal == "green light":
             signal_trigger.fall()
         
         if signal_trigger.is_rising_edge():
+            logger.info("detecting movement...")
             last_body_angle = body_angle_history[1][-1].copy()
-            print(last_body_angle)
+            # print(last_body_angle)
         if signal_trigger.is_triggered():
             if not utils.check_angle_error_within_threshold(last_body_angle,body_angle_history[1][-1],10):
                 logger.info("movement detected")
