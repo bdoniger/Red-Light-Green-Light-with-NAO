@@ -1,82 +1,85 @@
 '''
 Reco DONE
 Move DONE
+DETECT DONE
+
 '''
 
 from naoqi import ALProxy
 import time
 
-# ip & port
 nao_ip = "192.168.1.35"
 nao_port = 9559
 
-motion = ALProxy("ALMotion", "192.168.1.35", 9559)
-bodyPart = "Body"
-stiffness = 1.0
-timeDuration = 10
-motion.stiffnessInterpolation(bodyPart, stiffness, timeDuration)
+motion = ALProxy("ALMotion", nao_ip, nao_port)
+motion.wakeUp()
+
+posture = ALProxy('ALRobotPosture', nao_ip, nao_port)
+posture.goToPosture("Stand", 1.0)
+
 motion.moveInit()
+motion.stiffnessInterpolation("Body", 1.0, 1.0)
 
-# connect
+# touch sensors
+memory = ALProxy("ALMemory", nao_ip, nao_port)
+
+# sonar for touch detection
+sonar = ALProxy("ALSonar", nao_ip, nao_port)
+sonar.subscribe("SonarApp")
+
 speechRecognition = ALProxy("ALSpeechRecognition", nao_ip, nao_port)
-
-# set lan & word
 speechRecognition.pause(True)
 speechRecognition.setLanguage("English")
-vocabulary = ["green", "red"]
+speechRecognition.setVocabulary(["green", "red"], False)
 
-speechRecognition.subscribe("ASR")
-speechRecognition.unsubscribe("ASR")
-speechRecognition.setVocabulary(vocabulary, False)
-
-motion = ALProxy("ALMotion", "192.168.1.35", 9559)
-
-# while True:
 for i in range(5):
-    print("HERE",i)
-    # get word
-    speechRecognition.subscribe(nao_ip)
+    print("Listening", i)
+    speechRecognition.subscribe("ASR")
     
-    memProxy = ALProxy("ALMemory", nao_ip, 9559)
-    memProxy.subscribeToEvent('WordRecognized',nao_ip,'wordRecognized')
-
     speechRecognition.pause(False)
     time.sleep(8)
-
-    speechRecognition.unsubscribe(nao_ip)
-    words = memProxy.getData("WordRecognized")
-
-    print( "word: %s" % words )
-    print( "word type: %s" % type(words) )
-    # words = speechRecognition.getRecognizedWordList()
+    speechRecognition.pause(True)
+    
+    words = memory.getData("WordRecognized")
+    print("Word: ", words)
 
     if "green" in words:
-        print('HERE green')
+        print('Moving forward')
+        motion.moveInit()
+        while True:
+            # Check dis
+            distance = memory.getData("Device/SubDeviceList/US/Right/Sensor/Value")
+            # Check if touch
+            headTouched = memory.getData("Device/SubDeviceList/Head/Touch/Middle/Sensor/Value")
+            
+            if distance < 0.1 or headTouched:  # assuming 0.5 meters as threshold
+                print("Obstacle detected, stopping")
+                motion.stopMove()
+                break
+            
+            # motion.post.moveTo(0.2, 0.0, 0.0)  # Adjust speed as needed
 
-        # motion = ALProxy("ALMotion", "192.168.1.35", 9559)
-        # motion.setStiffnesses("Legs", 1.0)
-        # motion.moveInit()
+            motion.post.moveTo(0.002, 0.0, 0.0)
+            time.sleep(2)
 
-        # reduce distance
-        # add wait
-        motion.post.moveTo(0.0002, 0.0, 0.0)
-        time.sleep(2)
+            motion.post.moveTo(0.002, 0.0, 0.0)
+            time.sleep(2)
 
-        motion.post.moveTo(0.0002, 0.0, 0.0)
-        time.sleep(2)
+            motion.post.moveTo(0.002, 0.0, 0.0)
+            time.sleep(2)
 
-        motion.post.moveTo(0.0002, 0.0, 0.0)
-        time.sleep(2)
+            motion.post.moveTo(0.002, 0.0, 0.0)
 
-        motion.post.moveTo(0.0002, 0.0, 0.0)
-        
     elif "red" in words:
-        print('HERE red')
-        # motion = ALProxy("ALMotion", "192.168.1.35", 9559)
-        # motion.setStiffnesses("Legs", 1.0)
-        # motion.moveInit()
-        
-        # NEED TO CONFIRM
+        print('Stopping')
+        motion.stopMove()
+
+    speechRecognition.unsubscribe("ASR")
+
+# Clean up
+sonar.unsubscribe("SonarApp")
+motion.stiffnessInterpolation("Body", 0, 1.0)
+ 
         motion.stopMove()  
         motion.post.moveTo(0.0, 0.0, 0.0)
 
