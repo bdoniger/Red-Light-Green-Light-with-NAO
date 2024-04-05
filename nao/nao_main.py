@@ -28,6 +28,8 @@ ROBOT_PORT = 9559
 
 
 def detect_movement(msg):
+    if msg == []:
+        return False
     if msg[0] == "detect":
         logger.info('received event: %s', msg)
         return msg[1]
@@ -35,6 +37,15 @@ def detect_movement(msg):
         return False
 
 def detect_touch():
+    touchSensors = [
+        "Device/SubDeviceList/Head/Touch/Front/Sensor/Value",
+        "Device/SubDeviceList/Head/Touch/Rear/Sensor/Value",
+        "Device/SubDeviceList/Head/Touch/Middle/Sensor/Value"
+    ]
+
+    for sensor in touchSensors:
+        if memory.getData(sensor) > 0.0:
+            return True
     # pass
     return False
 
@@ -42,38 +53,31 @@ def set_led_color(color):
     if color == "red":
         leds.fadeRGB("AllLeds", 0xFF0000, 0.5)
         tts.say("Red Light")
+        conn.send(("event","red light"))
     elif color == "green":
         leds.fadeRGB("AllLeds", 0x00FF00, 0.5) 
         tts.say("Green Light")
+        conn.send(("event","green light"))
     else:
         leds.reset("AllLeds")  
 
 def game_logic():
-    address = ('localhost', 6000) 
-    listener = Listener(address, authkey=b'secret password')
-    conn = listener.accept()
-    print 'connection accepted from', listener.last_accepted
-    msg = conn.recv()
-    # do something with msg
-    print(msg)
-    conn.send(("program sign","start"))
+    
     
     
     set_led_color("off")
     start_time = time.time()
+    action_time = start_time
     while True:
+        current_time = time.time()
+        msg = []
         if conn.poll(0):
             msg=conn.recv()
-                   
-        # light = random.choice(["red","green"])
-        light = "red"
-        if light == "red":
-            conn.send(("event","red light"))
-        else:
-            conn.send(("event","green light"))
         
-        set_led_color(light)
-        time.sleep(max(1.5,random.uniform(1.5,3)))
+        if current_time >= action_time or light is None:
+            light = random.choice(["red","green"])
+            set_led_color(light)
+            action_time = current_time + random.uniform(3,5)           
 
         if light == "red" and detect_movement(msg):
             tts.say("I detected movement!")
@@ -94,8 +98,18 @@ if __name__ == "__main__":
     try:
         leds = ALProxy("ALLeds", ROBOT_ID, ROBOT_PORT)
         tts = ALProxy("ALTextToSpeech", ROBOT_ID, ROBOT_PORT)
+        memory = ALProxy("ALMemory", ROBOT_ID, ROBOT_PORT)
     except Exception as e:
         print "Could not create proxu to ALModule:,", e
         sys.exit(1)
+    
+    address = ('localhost', 6000) 
+    listener = Listener(address, authkey=b'secret password')
+    conn = listener.accept()
+    print 'connection accepted from', listener.last_accepted
+    msg = conn.recv()
+    # do something with msg
+    print(msg)
+    conn.send(("program sign","start"))
 
     game_logic()

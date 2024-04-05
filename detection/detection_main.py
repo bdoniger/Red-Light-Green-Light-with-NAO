@@ -103,7 +103,7 @@ if __name__ == '__main__':
     
     last_body_angle = body_angle_dict
     # camera = Camera_Thread(cv2.VideoCapture(), video=False, video_path=0)
-    camera = cv2.VideoCapture(0)
+    camera = cv2.VideoCapture(2)
     nao_signal = ""
     signal_trigger = utils.Trigger()
     while camera.isOpened():
@@ -168,11 +168,19 @@ if __name__ == '__main__':
             signal_trigger.fall()
         
         if signal_trigger.is_rising_edge():
+            
             logger.info("detecting movement...")
-            last_body_angle = body_angle_history[1][-1].copy()
+            try:
+                last_body_angle = body_angle_history[1][-1].copy()
+            except IndexError:
+                last_body_angle = {}
             # print(last_body_angle)
         if signal_trigger.is_triggered():
-            if not utils.check_angle_error_within_threshold(last_body_angle,body_angle_history[1][-1],10):
+            try :
+                this_body_angle = body_angle_history[1][-1]
+            except IndexError:
+                this_body_angle = {}
+            if not utils.check_angle_error_within_threshold(last_body_angle,this_body_angle,10):
                 logger.info("movement detected")
                 conn.send(("detect",True))
                     

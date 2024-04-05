@@ -32,6 +32,8 @@ def calculate_body_angle_mean(body_angle_history):
     pass
 
 def check_angle_error_within_threshold(last_body_angle, current_body_angle, threshold):
+    if last_body_angle == {} or current_body_angle == {}:
+        return True
     for key in last_body_angle.keys():
         if last_body_angle[key] == -1 or current_body_angle[key] == -1:
             continue

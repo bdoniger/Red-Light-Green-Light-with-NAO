@@ -8,8 +8,8 @@ from cap_from_youtube import cap_from_youtube
 link = "https://www.youtube.com/watch?v=QZYw0SBqjqI&ab_channel=BodyProject"
 # cap = cap_from_youtube(link, "720p")
 model = YOLO("yolov8m-pose.pt")
-
-cap = cv2.VideoCapture(0)
+print("-----")
+cap = cv2.VideoCapture(2)
 pose_dict = {
     'NOSE':           0,
     'LEFT_EYE':       1,
