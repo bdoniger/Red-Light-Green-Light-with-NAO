@@ -81,6 +81,7 @@ def game_logic():
 
         if light == "red" and detect_movement(msg):
             tts.say("I detected movement!")
+            tts.say("You lost.")
             break
         elif light == "green":
             if detect_touch():
@@ -107,9 +108,10 @@ if __name__ == "__main__":
     listener = Listener(address, authkey=b'secret password')
     conn = listener.accept()
     print 'connection accepted from', listener.last_accepted
+    conn.send(("program sign","start"))
+    
     msg = conn.recv()
     # do something with msg
     print(msg)
-    conn.send(("program sign","start"))
 
     game_logic()

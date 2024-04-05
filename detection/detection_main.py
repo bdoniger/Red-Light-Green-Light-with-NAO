@@ -83,12 +83,7 @@ if __name__ == '__main__':
             continue
     print('[INFO]connected to server...')
     # ping & pong
-    try:
-        conn.send(("program sign","start"))
-    except Exception as e:
-        print(e)
-        conn.close()
-        exit()
+
     try:
         conn_sign = conn.recv()
     except Exception as e:
@@ -99,13 +94,24 @@ if __name__ == '__main__':
     if conn_sign[0] == "program sign":
         if conn_sign[1] == "start":
             logger.info('send & recv good')
-    
+
+
     
     last_body_angle = body_angle_dict
     # camera = Camera_Thread(cv2.VideoCapture(), video=False, video_path=0)
     camera = cv2.VideoCapture(2)
     nao_signal = ""
     signal_trigger = utils.Trigger()
+    _,pre_image = camera.read()
+    if _ != False:
+        model.track(pre_image,device = "cuda",verbose = False)
+    try:
+        conn.send(("program sign","start"))
+    except Exception as e:
+        print(e)
+        conn.close()
+        exit()
+    
     while camera.isOpened():
         
         if conn.poll(0):
