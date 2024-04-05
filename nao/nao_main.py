@@ -98,7 +98,7 @@ if __name__ == "__main__":
     
     try:
         leds = ALProxy("ALLeds", ROBOT_ID, ROBOT_PORT)
-        tts = ALProxy("ALTextToSpeech", ROBOT_ID, ROBOT_PORT)
+        tts = ALProxy("ALAnimatedSpeech", ROBOT_ID, ROBOT_PORT)
         memory = ALProxy("ALMemory", ROBOT_ID, ROBOT_PORT)
     except Exception as e:
         print "Could not create proxu to ALModule:,", e
