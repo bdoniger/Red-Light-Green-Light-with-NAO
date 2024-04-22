@@ -9,7 +9,7 @@ link = "https://www.youtube.com/watch?v=QZYw0SBqjqI&ab_channel=BodyProject"
 # cap = cap_from_youtube(link, "720p")
 model = YOLO("yolov8m-pose.pt")
 print("-----")
-cap = cv2.VideoCapture(2)
+cap = cv2.VideoCapture(0)
 pose_dict = {
     'NOSE':           0,
     'LEFT_EYE':       1,
@@ -43,6 +43,7 @@ body_angle_dict={'l_ear_shoulder_angle':-1,
 
 body_angle_history = defaultdict(lambda: [])
 track_history = defaultdict(lambda: [])
+keypoint_history = defaultdict(lambda: [])
 
 def calculate_angle(p1, p2, p3):
     if (p1.any() ==0 or p2.any()==0 or p3.any()==0):
@@ -74,6 +75,22 @@ def calculate_body_angle(skeleton):
 
 def calculate_body_angle_mean(body_angle_history):
     pass
+
+def check_hand_raise(skeletons):
+    if skeletons == {}:
+        return []
+    keys = list(skeletons.keys())
+    values = list(skeletons.values())[-1]
+
+    ids=[]
+    for id,skeleton in zip(keys,values):
+        
+        # print(skeleton[pose_dict['RIGHT_WRIST']][1],skeleton[pose_dict['RIGHT_SHOULDER']][1])
+        if (skeleton[pose_dict['LEFT_WRIST']].any()==0 or skeleton[pose_dict['LEFT_SHOULDER']].any()==0) or (skeleton[pose_dict['RIGHT_WRIST']].any()==0 or skeleton[pose_dict['RIGHT_SHOULDER']].any()==0):
+            continue
+        if (skeleton[pose_dict['LEFT_WRIST']][1] < skeleton[pose_dict['LEFT_SHOULDER']][1]) or (skeleton[pose_dict['RIGHT_WRIST']][1] < skeleton[pose_dict['RIGHT_SHOULDER']][1]):
+            ids.append(id)
+    return ids
 
 def check_angle_error_within_threshold(last_body_angle, current_body_angle, threshold):
     for key in last_body_angle.keys():
@@ -135,11 +152,14 @@ while cap.isOpened():
             track = track_history[track_id]
             track.append((float(x), float(y)))
             body_angle=body_angle_history[track_id]
+            keypoint = keypoint_history[track_id]
             for i in range(len(skeletons)):
                 if check_skeleton_within_bounding_box(skeletons[i],box):
                     body_angle.append(calculate_body_angle(skeletons[i]))
+                    keypoint.append(skeletons[i])
             if len(body_angle) > 10:
                 body_angle.pop(0)
+                keypoint.pop(0)
             if len(track) > 90:
                 track.pop(0)
                 
@@ -152,6 +172,9 @@ while cap.isOpened():
                 color=(230, 230, 230),
                 thickness=10,
             )
+            ids = check_hand_raise(keypoint_history)
+            if len(ids) > 0:
+                print(f"Raise hand detected: {ids}")
     #check if c is pressed
         if cv2.waitKey(1) & 0xFF == ord("c"):
             print("c pressed")

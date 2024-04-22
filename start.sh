@@ -6,7 +6,7 @@
 gnome-terminal --tab --title="python2.7-NAO" -x zsh -c "\
 cd /home/cooper/Desktop/HRI_project/nao_project/nao; \
 source /home/cooper/anaconda3/bin/activate HRI_project;\
-python nao_main.py; \
+python fake_nao_main.py; \
 exec zsh"
 
 

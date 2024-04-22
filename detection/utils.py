@@ -31,6 +31,25 @@ def calculate_body_angle(skeleton,pose_dict):
 def calculate_body_angle_mean(body_angle_history):
     pass
 
+
+def check_hand_raise(skeletons,pose_dict):
+    if skeletons == {}:
+        return []
+    keys = list(skeletons.keys())
+    values = list(skeletons.values())[-1]
+
+    ids=[]
+    for id,skeleton in zip(keys,values):
+        
+        # print(skeleton[pose_dict['RIGHT_WRIST']][1],skeleton[pose_dict['RIGHT_SHOULDER']][1])
+        if (skeleton[pose_dict['LEFT_WRIST']].any()==0 or skeleton[pose_dict['LEFT_SHOULDER']].any()==0) or (skeleton[pose_dict['RIGHT_WRIST']].any()==0 or skeleton[pose_dict['RIGHT_SHOULDER']].any()==0):
+            continue
+        if (skeleton[pose_dict['LEFT_WRIST']][1] < skeleton[pose_dict['LEFT_SHOULDER']][1]) or (skeleton[pose_dict['RIGHT_WRIST']][1] < skeleton[pose_dict['RIGHT_SHOULDER']][1]):
+            ids.append(id)
+            print(f"Hand raised by {id}")
+    return ids
+
+
 def check_angle_error_within_threshold(last_body_angle, current_body_angle, threshold):
     if last_body_angle == {} or current_body_angle == {}:
         return True

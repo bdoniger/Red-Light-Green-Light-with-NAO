@@ -57,6 +57,8 @@ body_angle_dict={'l_ear_shoulder_angle':-1,
 model = YOLO("yolov8m-pose.pt") 
 body_angle_history = defaultdict(lambda: [])
 track_history = defaultdict(lambda: [])
+keypoint_history = defaultdict(lambda: [])
+gamer_ids = []
 
 if __name__ == '__main__':
     
@@ -98,9 +100,12 @@ if __name__ == '__main__':
 
     
     last_body_angle = body_angle_dict
+    last_body_angle_list = []
     # camera = Camera_Thread(cv2.VideoCapture(), video=False, video_path=0)
-    camera = cv2.VideoCapture(2)
+    camera = cv2.VideoCapture(0)
     nao_signal = ""
+    is_check = False
+    check_time = 0
     signal_trigger = utils.Trigger()
     _,pre_image = camera.read()
     if _ != False:
@@ -132,8 +137,8 @@ if __name__ == '__main__':
             camera.release()
             logger.error('camera broken')
             break
-        
-        results = model.track(frame,device = "cuda",verbose = False)   
+        # frame = cv2.resize(frame, (360, 640))
+        results = model.track(frame,device = "cuda",verbose = False,imgsz=640)   
         annotated_frame = results[0].plot()
         boxes = results[0].boxes.xywh.cpu()
         try:
@@ -149,11 +154,14 @@ if __name__ == '__main__':
             track = track_history[track_id]
             track.append((float(x), float(y)))
             body_angle=body_angle_history[track_id]
+            keypoint = keypoint_history[track_id]
             for i in range(len(skeletons)):
                 if utils.check_skeleton_within_bounding_box(skeletons[i],box):
                     body_angle.append(utils.calculate_body_angle(skeletons[i],pose_dict))
+                    keypoint.append(skeletons[i])
             if len(body_angle) > 10:
                 body_angle.pop(0)
+                keypoint.pop(0)
             if len(track) > 90:
                 track.pop(0)
                 
@@ -166,7 +174,25 @@ if __name__ == '__main__':
                 color=(230, 230, 230),
                 thickness=10,
             )
+        if nao_signal == "check":
+            logger.info('check received')
+            is_check = True
+            check_time = time.time()
+            nao_signal = ""
+        if is_check :
+            logger.info('checking for hand raise')
+            gamer_ids = utils.check_hand_raise(keypoint_history,pose_dict)
+            print(gamer_ids)
+            if gamer_ids == []:
+                check_time = time.time()
+            if gamer_ids != [] and time.time() - check_time > 2:
+                is_check = False
+                conn.send(("gamer",len(gamer_ids)))
             
+            
+            # body_angle_to_check = body_angle_history.items()[:][-1].copy()
+            
+                
         if nao_signal == "red light":
             logger.info('red light received')
             signal_trigger.rise()
@@ -176,19 +202,23 @@ if __name__ == '__main__':
         if signal_trigger.is_rising_edge():
             
             logger.info("detecting movement...")
+            
             try:
-                last_body_angle = body_angle_history[1][-1].copy()
+                for gamer_id in gamer_ids:
+                    last_body_angle = body_angle_history[gamer_id][-1].copy()
+                    last_body_angle_list.append(last_body_angle)
             except IndexError:
                 last_body_angle = {}
             # print(last_body_angle)
         if signal_trigger.is_triggered():
-            try :
-                this_body_angle = body_angle_history[1][-1]
-            except IndexError:
-                this_body_angle = {}
-            if not utils.check_angle_error_within_threshold(last_body_angle,this_body_angle,10):
-                logger.info("movement detected")
-                conn.send(("detect",True))
+            for i, gamer_id in enumerate(gamer_ids):
+                try :
+                    this_body_angle = body_angle_history[gamer_id][-1]
+                except IndexError:
+                    this_body_angle = {}
+                if not utils.check_angle_error_within_threshold(last_body_angle_list[i],this_body_angle,15):
+                    logger.info("movement detected")
+                    conn.send(("detect",True))
                     
         cv2.imshow("YOLOv8 Pose", annotated_frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
